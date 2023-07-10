@@ -23,26 +23,45 @@ import (
 
 // Error defines model for Error.
 type Error struct {
-	// Code Error code
-	Code    int32  `json:"code"`
+	// Message Error message
 	Message string `json:"message"`
 }
 
-// Message defines model for Message.
-type Message struct {
-	// Id Message ID
-	Id      int32  `json:"id"`
-	Message string `json:"message"`
+// NameEntry defines model for NameEntry.
+type NameEntry struct {
+	// Name the name
+	Name *string `json:"name,omitempty"`
 }
 
-// NewMessage defines model for NewMessage.
-type NewMessage struct {
-	// Message message to create
-	Message string `json:"message"`
+// NamesPageRequest defines model for NamesPageRequest.
+type NamesPageRequest struct {
+	// Limit the number of items per page
+	Limit *int32 `json:"limit,omitempty"`
+
+	// Page the page number
+	Page *int32 `json:"page,omitempty"`
+
+	// Year the year of the name
+	Year *int32 `json:"year,omitempty"`
 }
 
-// PostV1MessageJSONRequestBody defines body for PostV1Message for application/json ContentType.
-type PostV1MessageJSONRequestBody = NewMessage
+// NamesPageResponse defines model for NamesPageResponse.
+type NamesPageResponse struct {
+	// Limit the number of items per page
+	Limit int32 `json:"limit"`
+
+	// Names the names
+	Names []NameEntry `json:"names"`
+
+	// Page the page number
+	Page int32 `json:"page"`
+
+	// Total the total number of items
+	Total int32 `json:"total"`
+}
+
+// GetV1NameJSONRequestBody defines body for GetV1Name for application/json ContentType.
+type GetV1NameJSONRequestBody = NamesPageRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -117,17 +136,17 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// PostV1Message request with any body
-	PostV1MessageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetV1Name request with any body
+	GetV1NameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostV1Message(ctx context.Context, body PostV1MessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetV1Name(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetV1MessageId request
-	GetV1MessageId(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetV1NameId request
+	GetV1NameId(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) PostV1MessageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostV1MessageRequestWithBody(c.Server, contentType, body)
+func (c *Client) GetV1NameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV1NameRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +157,8 @@ func (c *Client) PostV1MessageWithBody(ctx context.Context, contentType string, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostV1Message(ctx context.Context, body PostV1MessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostV1MessageRequest(c.Server, body)
+func (c *Client) GetV1Name(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV1NameRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -150,8 +169,8 @@ func (c *Client) PostV1Message(ctx context.Context, body PostV1MessageJSONReques
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetV1MessageId(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetV1MessageIdRequest(c.Server, id)
+func (c *Client) GetV1NameId(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV1NameIdRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -162,19 +181,19 @@ func (c *Client) GetV1MessageId(ctx context.Context, id int32, reqEditors ...Req
 	return c.Client.Do(req)
 }
 
-// NewPostV1MessageRequest calls the generic PostV1Message builder with application/json body
-func NewPostV1MessageRequest(server string, body PostV1MessageJSONRequestBody) (*http.Request, error) {
+// NewGetV1NameRequest calls the generic GetV1Name builder with application/json body
+func NewGetV1NameRequest(server string, body GetV1NameJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostV1MessageRequestWithBody(server, "application/json", bodyReader)
+	return NewGetV1NameRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPostV1MessageRequestWithBody generates requests for PostV1Message with any type of body
-func NewPostV1MessageRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewGetV1NameRequestWithBody generates requests for GetV1Name with any type of body
+func NewGetV1NameRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -182,7 +201,7 @@ func NewPostV1MessageRequestWithBody(server string, contentType string, body io.
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/v1/message")
+	operationPath := fmt.Sprintf("/v1/name")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -192,7 +211,7 @@ func NewPostV1MessageRequestWithBody(server string, contentType string, body io.
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest("GET", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -202,8 +221,8 @@ func NewPostV1MessageRequestWithBody(server string, contentType string, body io.
 	return req, nil
 }
 
-// NewGetV1MessageIdRequest generates requests for GetV1MessageId
-func NewGetV1MessageIdRequest(server string, id int32) (*http.Request, error) {
+// NewGetV1NameIdRequest generates requests for GetV1NameId
+func NewGetV1NameIdRequest(server string, id int32) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -218,7 +237,7 @@ func NewGetV1MessageIdRequest(server string, id int32) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/v1/message/%s", pathParam0)
+	operationPath := fmt.Sprintf("/v1/name/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -279,24 +298,24 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// PostV1Message request with any body
-	PostV1MessageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1MessageResponse, error)
+	// GetV1Name request with any body
+	GetV1NameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error)
 
-	PostV1MessageWithResponse(ctx context.Context, body PostV1MessageJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1MessageResponse, error)
+	GetV1NameWithResponse(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error)
 
-	// GetV1MessageId request
-	GetV1MessageIdWithResponse(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*GetV1MessageIdResponse, error)
+	// GetV1NameId request
+	GetV1NameIdWithResponse(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error)
 }
 
-type PostV1MessageResponse struct {
+type GetV1NameResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Message
+	JSON200      *NamesPageResponse
 	JSONDefault  *Error
 }
 
 // Status returns HTTPResponse.Status
-func (r PostV1MessageResponse) Status() string {
+func (r GetV1NameResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -304,22 +323,22 @@ func (r PostV1MessageResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostV1MessageResponse) StatusCode() int {
+func (r GetV1NameResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetV1MessageIdResponse struct {
+type GetV1NameIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Message
+	JSON200      *NameEntry
 	JSONDefault  *Error
 }
 
 // Status returns HTTPResponse.Status
-func (r GetV1MessageIdResponse) Status() string {
+func (r GetV1NameIdResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -327,55 +346,55 @@ func (r GetV1MessageIdResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetV1MessageIdResponse) StatusCode() int {
+func (r GetV1NameIdResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-// PostV1MessageWithBodyWithResponse request with arbitrary body returning *PostV1MessageResponse
-func (c *ClientWithResponses) PostV1MessageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1MessageResponse, error) {
-	rsp, err := c.PostV1MessageWithBody(ctx, contentType, body, reqEditors...)
+// GetV1NameWithBodyWithResponse request with arbitrary body returning *GetV1NameResponse
+func (c *ClientWithResponses) GetV1NameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error) {
+	rsp, err := c.GetV1NameWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostV1MessageResponse(rsp)
+	return ParseGetV1NameResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostV1MessageWithResponse(ctx context.Context, body PostV1MessageJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1MessageResponse, error) {
-	rsp, err := c.PostV1Message(ctx, body, reqEditors...)
+func (c *ClientWithResponses) GetV1NameWithResponse(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error) {
+	rsp, err := c.GetV1Name(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostV1MessageResponse(rsp)
+	return ParseGetV1NameResponse(rsp)
 }
 
-// GetV1MessageIdWithResponse request returning *GetV1MessageIdResponse
-func (c *ClientWithResponses) GetV1MessageIdWithResponse(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*GetV1MessageIdResponse, error) {
-	rsp, err := c.GetV1MessageId(ctx, id, reqEditors...)
+// GetV1NameIdWithResponse request returning *GetV1NameIdResponse
+func (c *ClientWithResponses) GetV1NameIdWithResponse(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error) {
+	rsp, err := c.GetV1NameId(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetV1MessageIdResponse(rsp)
+	return ParseGetV1NameIdResponse(rsp)
 }
 
-// ParsePostV1MessageResponse parses an HTTP response from a PostV1MessageWithResponse call
-func ParsePostV1MessageResponse(rsp *http.Response) (*PostV1MessageResponse, error) {
+// ParseGetV1NameResponse parses an HTTP response from a GetV1NameWithResponse call
+func ParseGetV1NameResponse(rsp *http.Response) (*GetV1NameResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostV1MessageResponse{
+	response := &GetV1NameResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Message
+		var dest NamesPageResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -393,22 +412,22 @@ func ParsePostV1MessageResponse(rsp *http.Response) (*PostV1MessageResponse, err
 	return response, nil
 }
 
-// ParseGetV1MessageIdResponse parses an HTTP response from a GetV1MessageIdWithResponse call
-func ParseGetV1MessageIdResponse(rsp *http.Response) (*GetV1MessageIdResponse, error) {
+// ParseGetV1NameIdResponse parses an HTTP response from a GetV1NameIdWithResponse call
+func ParseGetV1NameIdResponse(rsp *http.Response) (*GetV1NameIdResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetV1MessageIdResponse{
+	response := &GetV1NameIdResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Message
+		var dest NameEntry
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -429,11 +448,11 @@ func ParseGetV1MessageIdResponse(rsp *http.Response) (*GetV1MessageIdResponse, e
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (POST /v1/message)
-	PostV1Message(ctx echo.Context) error
+	// (GET /v1/name)
+	GetV1Name(ctx echo.Context) error
 
-	// (GET /v1/message/{id})
-	GetV1MessageId(ctx echo.Context, id int32) error
+	// (GET /v1/name/{id})
+	GetV1NameId(ctx echo.Context, id int32) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -441,17 +460,17 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// PostV1Message converts echo context to params.
-func (w *ServerInterfaceWrapper) PostV1Message(ctx echo.Context) error {
+// GetV1Name converts echo context to params.
+func (w *ServerInterfaceWrapper) GetV1Name(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostV1Message(ctx)
+	err = w.Handler.GetV1Name(ctx)
 	return err
 }
 
-// GetV1MessageId converts echo context to params.
-func (w *ServerInterfaceWrapper) GetV1MessageId(ctx echo.Context) error {
+// GetV1NameId converts echo context to params.
+func (w *ServerInterfaceWrapper) GetV1NameId(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id int32
@@ -462,7 +481,7 @@ func (w *ServerInterfaceWrapper) GetV1MessageId(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetV1MessageId(ctx, id)
+	err = w.Handler.GetV1NameId(ctx, id)
 	return err
 }
 
@@ -494,63 +513,63 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/v1/message", wrapper.PostV1Message)
-	router.GET(baseURL+"/v1/message/:id", wrapper.GetV1MessageId)
+	router.GET(baseURL+"/v1/name", wrapper.GetV1Name)
+	router.GET(baseURL+"/v1/name/:id", wrapper.GetV1NameId)
 
 }
 
-type PostV1MessageRequestObject struct {
-	Body *PostV1MessageJSONRequestBody
+type GetV1NameRequestObject struct {
+	Body *GetV1NameJSONRequestBody
 }
 
-type PostV1MessageResponseObject interface {
-	VisitPostV1MessageResponse(w http.ResponseWriter) error
+type GetV1NameResponseObject interface {
+	VisitGetV1NameResponse(w http.ResponseWriter) error
 }
 
-type PostV1Message200JSONResponse Message
+type GetV1Name200JSONResponse NamesPageResponse
 
-func (response PostV1Message200JSONResponse) VisitPostV1MessageResponse(w http.ResponseWriter) error {
+func (response GetV1Name200JSONResponse) VisitGetV1NameResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostV1MessagedefaultJSONResponse struct {
+type GetV1NamedefaultJSONResponse struct {
 	Body       Error
 	StatusCode int
 }
 
-func (response PostV1MessagedefaultJSONResponse) VisitPostV1MessageResponse(w http.ResponseWriter) error {
+func (response GetV1NamedefaultJSONResponse) VisitGetV1NameResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type GetV1MessageIdRequestObject struct {
+type GetV1NameIdRequestObject struct {
 	Id int32 `json:"id"`
 }
 
-type GetV1MessageIdResponseObject interface {
-	VisitGetV1MessageIdResponse(w http.ResponseWriter) error
+type GetV1NameIdResponseObject interface {
+	VisitGetV1NameIdResponse(w http.ResponseWriter) error
 }
 
-type GetV1MessageId200JSONResponse Message
+type GetV1NameId200JSONResponse NameEntry
 
-func (response GetV1MessageId200JSONResponse) VisitGetV1MessageIdResponse(w http.ResponseWriter) error {
+func (response GetV1NameId200JSONResponse) VisitGetV1NameIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetV1MessageIddefaultJSONResponse struct {
+type GetV1NameIddefaultJSONResponse struct {
 	Body       Error
 	StatusCode int
 }
 
-func (response GetV1MessageIddefaultJSONResponse) VisitGetV1MessageIdResponse(w http.ResponseWriter) error {
+func (response GetV1NameIddefaultJSONResponse) VisitGetV1NameIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -560,11 +579,11 @@ func (response GetV1MessageIddefaultJSONResponse) VisitGetV1MessageIdResponse(w 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
-	// (POST /v1/message)
-	PostV1Message(ctx context.Context, request PostV1MessageRequestObject) (PostV1MessageResponseObject, error)
+	// (GET /v1/name)
+	GetV1Name(ctx context.Context, request GetV1NameRequestObject) (GetV1NameResponseObject, error)
 
-	// (GET /v1/message/{id})
-	GetV1MessageId(ctx context.Context, request GetV1MessageIdRequestObject) (GetV1MessageIdResponseObject, error)
+	// (GET /v1/name/{id})
+	GetV1NameId(ctx context.Context, request GetV1NameIdRequestObject) (GetV1NameIdResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx echo.Context, args interface{}) (interface{}, error)
@@ -580,54 +599,54 @@ type strictHandler struct {
 	middlewares []StrictMiddlewareFunc
 }
 
-// PostV1Message operation middleware
-func (sh *strictHandler) PostV1Message(ctx echo.Context) error {
-	var request PostV1MessageRequestObject
+// GetV1Name operation middleware
+func (sh *strictHandler) GetV1Name(ctx echo.Context) error {
+	var request GetV1NameRequestObject
 
-	var body PostV1MessageJSONRequestBody
+	var body GetV1NameJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostV1Message(ctx.Request().Context(), request.(PostV1MessageRequestObject))
+		return sh.ssi.GetV1Name(ctx.Request().Context(), request.(GetV1NameRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostV1Message")
+		handler = middleware(handler, "GetV1Name")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PostV1MessageResponseObject); ok {
-		return validResponse.VisitPostV1MessageResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetV1NameResponseObject); ok {
+		return validResponse.VisitGetV1NameResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// GetV1MessageId operation middleware
-func (sh *strictHandler) GetV1MessageId(ctx echo.Context, id int32) error {
-	var request GetV1MessageIdRequestObject
+// GetV1NameId operation middleware
+func (sh *strictHandler) GetV1NameId(ctx echo.Context, id int32) error {
+	var request GetV1NameIdRequestObject
 
 	request.Id = id
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetV1MessageId(ctx.Request().Context(), request.(GetV1MessageIdRequestObject))
+		return sh.ssi.GetV1NameId(ctx.Request().Context(), request.(GetV1NameIdRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetV1MessageId")
+		handler = middleware(handler, "GetV1NameId")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetV1MessageIdResponseObject); ok {
-		return validResponse.VisitGetV1MessageIdResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetV1NameIdResponseObject); ok {
+		return validResponse.VisitGetV1NameIdResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
@@ -637,16 +656,17 @@ func (sh *strictHandler) GetV1MessageId(ctx echo.Context, id int32) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+RUwXLTMBD9FbFw1NRpe/MRypQMU+DAwKHpQbU2iRhbEqt12oxH/85ItrGTtEMPvXFJ",
-	"bO3qvd19+9xB5RrvLFoOUHYQqi02Kj9+JHKUHjw5j8QG83HlNKZ/jaEi49k4C2WfLHJMwtpRoxhKMJYv",
-	"L0AC7z32r7hBgiihwRDUJgMNwcBk7AZilED4uzWEGspbGCDH/Lso4Wa6e1ia0aeFDcliefXKhRl9VNYX",
-	"fHi2shnqYXlDQLATFaFinIp6hneiTBFj1+4UVeNatTVfzQ4lsOEap+D3/CphhxT6W4uz8zQB59Eqb6CE",
-	"y7N0JMEr3uY2it15MWvFu8Cn5B9yH0IJiw9izM6wpFLKUkMJ31zgH+c3f6OpQwz83ul9v2SW0WZw5X1t",
-	"qnyz+BUSQwf4qBpf96NdpJ+dqtvUW7ca57OCcgWfsK6d+Omo1m9WEPMs+w1Pl94RrqGEt8VkgWLY/2Im",
-	"Zoy9BME7G3rOi8XiBVW+jGlGI48m+fUz5LOs16sR9r5+gq61+OixYtQCx5wo56IXndEx4W/wCeGvkYUa",
-	"FRf3+95zh7pf4yT7UufdItUgIwUob48Rl1fCrcXMI4TcUlpmk8JpL0GCVU02sYa5U5hanKv9T+/Hu/9X",
-	"5eQLpN2oQks1lLBl9mVRdFsXOM04FumzIGGnyKj7wX5jsF+HoQeoXaXqFErod/FPAAAA//+1HpmZZgYA",
-	"AA==",
+	"H4sIAAAAAAAC/8RVwW7bOhD8FWLfOwqRnJyqY5GgMAqkRQ+9xD4w0tpmIZHMcmXEMPTvxZKS48RK4wJp",
+	"ezEI7nqGnJ2h9lC51juLlgOUewjVBlsdlzdEjmThyXkkNhi3WwxBr1GWNYaKjGfjLJSpX43lDHjnEUoI",
+	"TMauoe8zIHzoDGEN5d0BZtlncKtbvLFMu1M2q9sJKt6gipVTlgEufNVr/IYPHQY+RW1Ma/gV2K69R1Ju",
+	"pQxjG5RHUj5daOWo1QwlGMtXl0/cxjKukaDPwE8qI7hSGcDPg9qhpmkoqcgBj1R4E++FLsE7G/AvCiPn",
+	"DK8PMkAGEVZa/idcQQn/5U/WzAdf5k9W6Q80mkjv3ll9dqybaaxYeinHWTN4noDx3oOISfqReRknZuzK",
+	"nR5CNCB1vJcBG25wrEEGW6SQuouL4mImV3IerfYGSriKW8LMm6h4vp3lY9LWOGGAT8hpTmpFrlVarc0W",
+	"bXQiRGTS0jmvU+/32W3yJaUEfnR1zHblLKON+Nr7xlTxX/mPICR7wEfd+ib5pJCfrW46udV+EeOwgPKy",
+	"mH3IFlGzBZSzbJF0k3XRR4mTU87x0bM3ou/TfFIy4hEui+KMQ/8235C9yPdcZVFY0aFByivdNfxup0hP",
+	"+gRzZ/HRY8VYKxx7+uzgi3xv6v6X5tDRHup+p+bXrztiXkfXkW6RkQKUdy+x5tcSqeHjoNgpQu5IHG6k",
+	"LI6FbPgqgKnhOFJMHR7P/+1ALv/wxIeX6lTvL5///XglK0jbcQ4dNVDChtmXeb7fuMCicp/Lk5HBVpPR",
+	"90M2x2KywnAHaFylGykJ+rL/GQAA//8K+VZgWggAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
