@@ -1,0 +1,8 @@
+package: server_oapi
+generate:
+  models: true
+  client: true
+  echo-server: true
+  embedded-spec: true
+  strict-server: true
+output: server-oapi.gen.go
