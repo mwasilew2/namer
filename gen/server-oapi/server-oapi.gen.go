@@ -36,28 +36,28 @@ type NameEntry struct {
 // NamesPageRequest defines model for NamesPageRequest.
 type NamesPageRequest struct {
 	// Limit the number of items per page
-	Limit *int32 `json:"limit,omitempty"`
+	Limit *int64 `json:"limit,omitempty"`
 
 	// Page the page number
-	Page *int32 `json:"page,omitempty"`
+	Page *int64 `json:"page,omitempty"`
 
 	// Year the year of the name
-	Year *int32 `json:"year,omitempty"`
+	Year *int64 `json:"year,omitempty"`
 }
 
 // NamesPageResponse defines model for NamesPageResponse.
 type NamesPageResponse struct {
 	// Limit the number of items per page
-	Limit int32 `json:"limit"`
+	Limit int64 `json:"limit"`
 
 	// Names the names
 	Names []NameEntry `json:"names"`
 
 	// Page the page number
-	Page int32 `json:"page"`
+	Page int64 `json:"page"`
 
 	// Total the total number of items
-	Total int32 `json:"total"`
+	Total int64 `json:"total"`
 }
 
 // GetV1NameJSONRequestBody defines body for GetV1Name for application/json ContentType.
@@ -142,7 +142,7 @@ type ClientInterface interface {
 	GetV1Name(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetV1NameId request
-	GetV1NameId(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetV1NameId(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetV1NameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -169,7 +169,7 @@ func (c *Client) GetV1Name(ctx context.Context, body GetV1NameJSONRequestBody, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetV1NameId(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetV1NameId(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetV1NameIdRequest(c.Server, id)
 	if err != nil {
 		return nil, err
@@ -222,7 +222,7 @@ func NewGetV1NameRequestWithBody(server string, contentType string, body io.Read
 }
 
 // NewGetV1NameIdRequest generates requests for GetV1NameId
-func NewGetV1NameIdRequest(server string, id int32) (*http.Request, error) {
+func NewGetV1NameIdRequest(server string, id int64) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -304,7 +304,7 @@ type ClientWithResponsesInterface interface {
 	GetV1NameWithResponse(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error)
 
 	// GetV1NameId request
-	GetV1NameIdWithResponse(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error)
+	GetV1NameIdWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error)
 }
 
 type GetV1NameResponse struct {
@@ -371,7 +371,7 @@ func (c *ClientWithResponses) GetV1NameWithResponse(ctx context.Context, body Ge
 }
 
 // GetV1NameIdWithResponse request returning *GetV1NameIdResponse
-func (c *ClientWithResponses) GetV1NameIdWithResponse(ctx context.Context, id int32, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error) {
+func (c *ClientWithResponses) GetV1NameIdWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error) {
 	rsp, err := c.GetV1NameId(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -452,7 +452,7 @@ type ServerInterface interface {
 	GetV1Name(ctx echo.Context) error
 
 	// (GET /v1/name/{id})
-	GetV1NameId(ctx echo.Context, id int32) error
+	GetV1NameId(ctx echo.Context, id int64) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -473,7 +473,7 @@ func (w *ServerInterfaceWrapper) GetV1Name(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetV1NameId(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id int32
+	var id int64
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
@@ -548,7 +548,7 @@ func (response GetV1NamedefaultJSONResponse) VisitGetV1NameResponse(w http.Respo
 }
 
 type GetV1NameIdRequestObject struct {
-	Id int32 `json:"id"`
+	Id int64 `json:"id"`
 }
 
 type GetV1NameIdResponseObject interface {
@@ -629,7 +629,7 @@ func (sh *strictHandler) GetV1Name(ctx echo.Context) error {
 }
 
 // GetV1NameId operation middleware
-func (sh *strictHandler) GetV1NameId(ctx echo.Context, id int32) error {
+func (sh *strictHandler) GetV1NameId(ctx echo.Context, id int64) error {
 	var request GetV1NameIdRequestObject
 
 	request.Id = id
@@ -656,17 +656,17 @@ func (sh *strictHandler) GetV1NameId(ctx echo.Context, id int32) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8RVwW7bOhD8FWLfOwqRnJyqY5GgMAqkRQ+9xD4w0tpmIZHMcmXEMPTvxZKS48RK4wJp",
-	"ezEI7nqGnJ2h9lC51juLlgOUewjVBlsdlzdEjmThyXkkNhi3WwxBr1GWNYaKjGfjLJSpX43lDHjnEUoI",
-	"TMauoe8zIHzoDGEN5d0BZtlncKtbvLFMu1M2q9sJKt6gipVTlgEufNVr/IYPHQY+RW1Ma/gV2K69R1Ju",
-	"pQxjG5RHUj5daOWo1QwlGMtXl0/cxjKukaDPwE8qI7hSGcDPg9qhpmkoqcgBj1R4E++FLsE7G/AvCiPn",
-	"DK8PMkAGEVZa/idcQQn/5U/WzAdf5k9W6Q80mkjv3ll9dqybaaxYeinHWTN4noDx3oOISfqReRknZuzK",
-	"nR5CNCB1vJcBG25wrEEGW6SQuouL4mImV3IerfYGSriKW8LMm6h4vp3lY9LWOGGAT8hpTmpFrlVarc0W",
-	"bXQiRGTS0jmvU+/32W3yJaUEfnR1zHblLKON+Nr7xlTxX/mPICR7wEfd+ib5pJCfrW46udV+EeOwgPKy",
-	"mH3IFlGzBZSzbJF0k3XRR4mTU87x0bM3ou/TfFIy4hEui+KMQ/8235C9yPdcZVFY0aFByivdNfxup0hP",
-	"+gRzZ/HRY8VYKxx7+uzgi3xv6v6X5tDRHup+p+bXrztiXkfXkW6RkQKUdy+x5tcSqeHjoNgpQu5IHG6k",
-	"LI6FbPgqgKnhOFJMHR7P/+1ALv/wxIeX6lTvL5///XglK0jbcQ4dNVDChtmXeb7fuMCicp/Lk5HBVpPR",
-	"90M2x2KywnAHaFylGykJ+rL/GQAA//8K+VZgWggAAA==",
+	"H4sIAAAAAAAC/8RVUWvbMBD+K+K2R1M73RjMj6NlhEE39rCXJg+qfUk0bEk9nUND8H8fJ9lp2iRrBt32",
+	"EoTu8n3Sd98nb6FyrXcWLQcotxCqFbY6Lq+JHMnCk/NIbDButxiCXqIsawwVGc/GWShTvxrLGfDGI5QQ",
+	"mIxdQt9nQHjfGcIaytsdzLzP4Ea3eG2ZNodsVrdHqHiFKlYOWQa48E0v8Tvedxj4ELUxreETsF17h6Tc",
+	"QhnGNiiPpHy60MJRqxlKMJY/vH/kNpZxiQR9Bv6oMoIrlQH8PKgNajoOJRU54J4KL+I90yV4ZwP+Q2Hk",
+	"nOH0IANkEGGl5S3hAkp4kz9aMx98mT9apd/RaCK9eWX12bFujmPF0nM5zprB0wSM9x5ETNKPzPM4MWMX",
+	"7vAQogGp/b0M2HCDYw0yWCOF1F1cFBcTuZLzaLU3UMK7uCXMvIqK5+tJPiZtiUcM8Bk5zUktyLVKq6VZ",
+	"o41OhIhMWjqnder9MblJvqSUwE+ujtmunGW0EV9735gq/iv/GYRkC/igW98knxTys9ZNJ7fazmIcZlBe",
+	"FpOP2SxqNoNyks2SbrIu+ihxcso5PnryRvR9mk9KRjzCZVGcceg/5huyF/meqiwKK9o1SHmhu4Zf7RTp",
+	"ST/C3Fl88Fgx1grHnj7b+SLfmrr/rTl0tIe626jp1WlHTOvoOtItMlKA8vY51vRKIjV8HBQ7RcgdicNP",
+	"mmMCKSpQRkNDNnw0wNSwnzimDvft8XJe53/ZEMNDdjiOr1/+//QlSkjrcUwdNVDCitmXeb5ducCicp/L",
+	"i5LBWpPRd8N0xmJyynAHaFylGykJ+rz/FQAA//8oo7yMeQgAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -20,6 +20,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	server_grpc "github.com/mwasilew2/go-service-template/gen/server-grpc"
 	server_oapi "github.com/mwasilew2/go-service-template/gen/server-oapi"
+	"github.com/mwasilew2/go-service-template/internal/adapters/namesdb"
+	"github.com/mwasilew2/go-service-template/internal/domain/ports"
 	"github.com/oklog/run"
 	slogecho "github.com/samber/slog-echo"
 	"google.golang.org/grpc"
@@ -31,25 +33,33 @@ type serverCmd struct {
 	GrpcAddr string `help:"address which the grpc server should listen on" default:":8081"`
 
 	// Dependencies
-	logger *slog.Logger
+	logger       *slog.Logger
+	namesService ports.NamesService
 
 	// Embedded types
 	server_grpc.UnimplementedAppServerServer
 }
 
-func (c *serverCmd) PostV1Message(ctx context.Context, request server_oapi.PostV1MessageRequestObject) (server_oapi.PostV1MessageResponseObject, error) {
-	return nil, nil
+func (c *serverCmd) GetV1Name(ctx context.Context, request server_oapi.GetV1NameRequestObject) (server_oapi.GetV1NameResponseObject, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (c *serverCmd) GetV1MessageId(ctx context.Context, request server_oapi.GetV1MessageIdRequestObject) (server_oapi.GetV1MessageIdResponseObject, error) {
-	return server_oapi.GetV1MessageId200JSONResponse{
-		Id:      2,
-		Message: "Hello World!",
+func (c *serverCmd) GetV1NameId(ctx context.Context, request server_oapi.GetV1NameIdRequestObject) (server_oapi.GetV1NameIdResponseObject, error) {
+	nameEntry, err := c.namesService.GetName(ctx, request.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get name: %w", err)
+	}
+	return server_oapi.GetV1NameId200JSONResponse{
+		Name: &(*nameEntry).Value,
 	}, nil
 }
 
 func (c *serverCmd) Run(cmdCtx *cmdContext) error {
 	c.logger = cmdCtx.Logger.With("component", "serverCmd")
+
+	// initialize dependencies
+	c.namesService = namesdb.NewNamesDB()
 
 	// create a run group
 	g := run.Group{}

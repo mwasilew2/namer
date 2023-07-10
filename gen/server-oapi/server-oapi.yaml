@@ -43,7 +43,10 @@ paths:
           required: true
           schema:
             type: integer
-            format: int32
+            format: int64
+          examples:
+            '0':
+              value: '1'
       responses:
         '200':
           description: OK
@@ -59,27 +62,19 @@ paths:
                 $ref: '#/components/schemas/Error'
 components:
   schemas:
-    NamesRequest:
-      required:
-        - id
-      properties:
-        id:
-          type: integer
-          format: int32
-          description: the id of the name
     NamesPageRequest:
       properties:
         year:
           type: integer
-          format: int32
+          format: int64
           description: the year of the name
         page:
           type: integer
-          format: int32
+          format: int64
           description: the page number
         limit:
           type: integer
-          format: int32
+          format: int64
           description: the number of items per page
     NamesPageResponse:
       required:
@@ -95,15 +90,15 @@ components:
           description: the names
         page:
           type: integer
-          format: int32
+          format: int64
           description: the page number
         limit:
           type: integer
-          format: int32
+          format: int64
           description: the number of items per page
         total:
           type: integer
-          format: int32
+          format: int64
           description: the total number of items
     NameEntry:
       properties:
