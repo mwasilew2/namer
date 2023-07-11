@@ -41,8 +41,67 @@ type serverCmd struct {
 }
 
 func (c *serverCmd) GetV1Name(ctx context.Context, request server_oapi.GetV1NameRequestObject) (server_oapi.GetV1NameResponseObject, error) {
-	//TODO implement me
-	panic("implement me")
+	// sanitize input
+	var page int64
+	if request.Body.Page != nil {
+		if *request.Body.Page < 0 {
+			return nil, fmt.Errorf("page must be >= 0")
+		}
+		if *request.Body.Page != 0 {
+			page = *request.Body.Page
+		}
+	}
+
+	var limit int64
+	if request.Body.Limit != nil {
+		if *request.Body.Limit < 0 {
+			return nil, fmt.Errorf("limit must be >= 0")
+		}
+		if *request.Body.Limit != 0 {
+			limit = *request.Body.Limit
+		}
+	}
+	if limit == 0 {
+		limit = 10
+	}
+
+	var year int64
+	if request.Body.Year != nil {
+		if *request.Body.Year < 0 {
+			return nil, fmt.Errorf("year must be >= 0")
+		}
+		if *request.Body.Year != 0 {
+			year = *request.Body.Year
+		}
+	}
+	if year == 0 {
+		year = 2023
+	}
+
+	// get data from DB
+	result, err := c.namesService.GetPage(ctx, year, page, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get page: %w", err)
+	}
+	total, err := c.namesService.GetNoOfEntries(ctx, year)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get no of entries: %w", err)
+	}
+
+	// convert to output type
+	var output []server_oapi.NameEntry
+	for _, entry := range result {
+		output = append(output, server_oapi.NameEntry{
+			Name: &entry.Value,
+		})
+	}
+	return server_oapi.GetV1Name200JSONResponse{
+		Limit: limit,
+		Names: output,
+		Page:  page,
+		Total: total,
+		Year:  year,
+	}, nil
 }
 
 func (c *serverCmd) GetV1NameId(ctx context.Context, request server_oapi.GetV1NameIdRequestObject) (server_oapi.GetV1NameIdResponseObject, error) {

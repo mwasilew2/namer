@@ -79,6 +79,7 @@ components:
     NamesPageResponse:
       required:
         - names
+        - year
         - page
         - limit
         - total
@@ -92,6 +93,10 @@ components:
           type: integer
           format: int64
           description: the page number
+        year:
+          type: integer
+          format: int64
+          description: the year of the names
         limit:
           type: integer
           format: int64

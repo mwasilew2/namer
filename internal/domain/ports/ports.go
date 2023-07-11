@@ -8,4 +8,6 @@ import (
 
 type NamesService interface {
 	GetName(ctx context.Context, id int64) (*models.Name, error)
+	GetPage(ctx context.Context, year int64, page int64, limit int64) ([]*models.Name, error)
+	GetNoOfEntries(ctx context.Context, year int64) (int64, error)
 }

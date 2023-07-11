@@ -55,12 +55,12 @@ FILE_READING_LOOP:
 		}
 		c.logger.Debug("read a record", "record", record)
 		name := record[0]
-		lastId++
 		// write the transformed data to the destination file
 		_, err = bofd.WriteString(fmt.Sprintf("%d,%s\n", lastId, name))
 		if err != nil {
 			return fmt.Errorf("failed to write to destination file %s: %w", c.OutputFilepath, err)
 		}
+		lastId++
 		c.logger.Debug("transformed a record", "id", lastId, "name", name)
 	}
 
