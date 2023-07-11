@@ -1,1 +1,1 @@
-# go-service-template
+# Namer
