@@ -23,8 +23,9 @@ type Globals struct {
 var kongApp struct {
 	Globals
 
-	Server serverCmd `cmd:"" help:"Start the app server."`
-	Client clientCmd `cmd:"" help:"Start the app client."`
+	Server    serverCmd    `cmd:"" help:"Start the app server."`
+	Client    clientCmd    `cmd:"" help:"Start the app client."`
+	Transform transformCmd `cmd:"" help:"Transform statistical data into a format easily digestable by an executable."`
 }
 
 func main() {

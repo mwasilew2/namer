@@ -59,7 +59,11 @@ func (c *serverCmd) Run(cmdCtx *cmdContext) error {
 	c.logger = cmdCtx.Logger.With("component", "serverCmd")
 
 	// initialize dependencies
-	c.namesService = namesdb.NewNamesDB()
+	var err error
+	c.namesService, err = namesdb.NewNamesDB()
+	if err != nil {
+		return fmt.Errorf("failed to initialize names service: %w", err)
+	}
 
 	// create a run group
 	g := run.Group{}
