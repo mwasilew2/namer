@@ -29,8 +29,9 @@ import (
 
 type serverCmd struct {
 	// cli options
-	HttpAddr string `help:"address which the http server should listen on" default:":8080"`
-	GrpcAddr string `help:"address which the grpc server should listen on" default:":8081"`
+	HttpAddr  string `help:"address which the http server should listen on" default:":8080" env:"HTTP_ADDR"`
+	HttpDebug bool   `help:"enable debug messages in the http server responses" default:"false" env:"HTTP_DEBUG"`
+	GrpcAddr  string `help:"address which the grpc server should listen on" default:":8081" env:"GRPC_ADDR"`
 
 	// Dependencies
 	logger       *slog.Logger
@@ -127,13 +128,21 @@ func (c *serverCmd) Run(cmdCtx *cmdContext) error {
 	// create a run group
 	g := run.Group{}
 
-	// start http server
+	// initialize http server
 	e := echo.New()
+	e.Debug = c.HttpDebug
 	e.HideBanner = true
 	e.HidePort = true
-	e.Use(middleware.Recover())
 	e.Use(slogecho.New(c.logger.With("subcomponent", "echo")))
 	e.Use(echoprometheus.NewMiddleware("echo"))
+	e.Use(middleware.Recover())
+
+	// http routes
+	// admin routes
+	e.GET("/metrics", echoprometheus.NewHandler())
+	e.GET("/debug/*", echo.WrapHandler(http.DefaultServeMux))
+
+	// oapi routes
 	swagger, err := server_oapi.GetSwagger()
 	if err != nil {
 		return fmt.Errorf("failed to get swagger: %w", err)
@@ -141,19 +150,22 @@ func (c *serverCmd) Run(cmdCtx *cmdContext) error {
 	e.Use(oapi_middleware.OapiRequestValidatorWithOptions(swagger, &oapi_middleware.Options{
 		Skipper: func(ctx echo.Context) bool {
 			path := ctx.Request().URL.Path
-			if path == "/metrics" {
-				return true
-			}
-			if strings.HasPrefix(path, "/debug") {
+			if !strings.HasPrefix(path, "/api") {
 				return true
 			}
 			return false
 		},
 	}))
-	e.GET("/metrics", echoprometheus.NewHandler())
-	e.GET("/debug/*", echo.WrapHandler(http.DefaultServeMux))
 	strictSrv := server_oapi.NewStrictHandler(c, nil)
 	server_oapi.RegisterHandlersWithBaseURL(e, strictSrv, "/api")
+
+	// static files
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:   "ui/vue-app/dist",
+		Browse: true,
+	}))
+
+	// start http server
 	g.Add(func() error {
 		c.logger.Info("starting http server", "address", c.HttpAddr)
 		return e.Start(c.HttpAddr)
@@ -168,7 +180,7 @@ func (c *serverCmd) Run(cmdCtx *cmdContext) error {
 		c.logger.Debug("http server stopped")
 	})
 
-	// start grpc server
+	// initialize grpc server
 	var srv *grpc.Server
 	lis, err := net.Listen("tcp", c.GrpcAddr)
 	if err != nil {
@@ -176,6 +188,8 @@ func (c *serverCmd) Run(cmdCtx *cmdContext) error {
 	}
 	srv = grpc.NewServer()
 	server_grpc.RegisterAppServerServer(srv, c)
+
+	// start grpc server
 	g.Add(func() error {
 		c.logger.Info("starting grpc server", "address", c.GrpcAddr)
 		return srv.Serve(lis)

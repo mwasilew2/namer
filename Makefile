@@ -6,3 +6,7 @@ gen-grpc:
 .PHONY gen-oapi:
 gen-oapi:
 	cd gen/server-oapi; oapi-codegen -config codegen.cfg.yml server-oapi.yaml > server-oapi.gen.go
+
+.PHONY gen-ui:
+gen-ui:
+	cd ui/vue-app; yarn run build
