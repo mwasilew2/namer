@@ -33,18 +33,6 @@ type NameEntry struct {
 	Name *string `json:"name,omitempty"`
 }
 
-// NamesPageRequest defines model for NamesPageRequest.
-type NamesPageRequest struct {
-	// Limit the number of items per page
-	Limit *int64 `json:"limit,omitempty"`
-
-	// Page the page number
-	Page *int64 `json:"page,omitempty"`
-
-	// Year the year of the name
-	Year *int64 `json:"year,omitempty"`
-}
-
 // NamesPageResponse defines model for NamesPageResponse.
 type NamesPageResponse struct {
 	// Limit the number of items per page
@@ -63,8 +51,23 @@ type NamesPageResponse struct {
 	Year int64 `json:"year"`
 }
 
-// GetV1NameJSONRequestBody defines body for GetV1Name for application/json ContentType.
-type GetV1NameJSONRequestBody = NamesPageRequest
+// GetV1NameParams defines parameters for GetV1Name.
+type GetV1NameParams struct {
+	// Year the year of the name
+	Year *int64 `form:"year,omitempty" json:"year,omitempty"`
+
+	// Page the page number
+	Page *int64 `form:"page,omitempty" json:"page,omitempty"`
+
+	// Limit the number of items per page
+	Limit *int64 `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetV1NameIdParams defines parameters for GetV1NameId.
+type GetV1NameIdParams struct {
+	// Year the year of the name
+	Year *int64 `form:"year,omitempty" json:"year,omitempty"`
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -139,17 +142,15 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetV1Name request with any body
-	GetV1NameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	GetV1Name(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetV1Name request
+	GetV1Name(ctx context.Context, params *GetV1NameParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetV1NameId request
-	GetV1NameId(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetV1NameId(ctx context.Context, id int64, params *GetV1NameIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) GetV1NameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetV1NameRequestWithBody(c.Server, contentType, body)
+func (c *Client) GetV1Name(ctx context.Context, params *GetV1NameParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV1NameRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -160,8 +161,8 @@ func (c *Client) GetV1NameWithBody(ctx context.Context, contentType string, body
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetV1Name(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetV1NameRequest(c.Server, body)
+func (c *Client) GetV1NameId(ctx context.Context, id int64, params *GetV1NameIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV1NameIdRequest(c.Server, id, params)
 	if err != nil {
 		return nil, err
 	}
@@ -172,31 +173,8 @@ func (c *Client) GetV1Name(ctx context.Context, body GetV1NameJSONRequestBody, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetV1NameId(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetV1NameIdRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// NewGetV1NameRequest calls the generic GetV1Name builder with application/json body
-func NewGetV1NameRequest(server string, body GetV1NameJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewGetV1NameRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewGetV1NameRequestWithBody generates requests for GetV1Name with any type of body
-func NewGetV1NameRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewGetV1NameRequest generates requests for GetV1Name
+func NewGetV1NameRequest(server string, params *GetV1NameParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -214,18 +192,68 @@ func NewGetV1NameRequestWithBody(server string, contentType string, body io.Read
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), body)
+	queryValues := queryURL.Query()
+
+	if params.Year != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "year", runtime.ParamLocationQuery, *params.Year); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Page != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page", runtime.ParamLocationQuery, *params.Page); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Limit != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryURL.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
 
 // NewGetV1NameIdRequest generates requests for GetV1NameId
-func NewGetV1NameIdRequest(server string, id int64) (*http.Request, error) {
+func NewGetV1NameIdRequest(server string, id int64, params *GetV1NameIdParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -249,6 +277,26 @@ func NewGetV1NameIdRequest(server string, id int64) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	queryValues := queryURL.Query()
+
+	if params.Year != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "year", runtime.ParamLocationQuery, *params.Year); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryURL.RawQuery = queryValues.Encode()
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
@@ -301,13 +349,11 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetV1Name request with any body
-	GetV1NameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error)
-
-	GetV1NameWithResponse(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error)
+	// GetV1Name request
+	GetV1NameWithResponse(ctx context.Context, params *GetV1NameParams, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error)
 
 	// GetV1NameId request
-	GetV1NameIdWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error)
+	GetV1NameIdWithResponse(ctx context.Context, id int64, params *GetV1NameIdParams, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error)
 }
 
 type GetV1NameResponse struct {
@@ -356,17 +402,9 @@ func (r GetV1NameIdResponse) StatusCode() int {
 	return 0
 }
 
-// GetV1NameWithBodyWithResponse request with arbitrary body returning *GetV1NameResponse
-func (c *ClientWithResponses) GetV1NameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error) {
-	rsp, err := c.GetV1NameWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetV1NameResponse(rsp)
-}
-
-func (c *ClientWithResponses) GetV1NameWithResponse(ctx context.Context, body GetV1NameJSONRequestBody, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error) {
-	rsp, err := c.GetV1Name(ctx, body, reqEditors...)
+// GetV1NameWithResponse request returning *GetV1NameResponse
+func (c *ClientWithResponses) GetV1NameWithResponse(ctx context.Context, params *GetV1NameParams, reqEditors ...RequestEditorFn) (*GetV1NameResponse, error) {
+	rsp, err := c.GetV1Name(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -374,8 +412,8 @@ func (c *ClientWithResponses) GetV1NameWithResponse(ctx context.Context, body Ge
 }
 
 // GetV1NameIdWithResponse request returning *GetV1NameIdResponse
-func (c *ClientWithResponses) GetV1NameIdWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error) {
-	rsp, err := c.GetV1NameId(ctx, id, reqEditors...)
+func (c *ClientWithResponses) GetV1NameIdWithResponse(ctx context.Context, id int64, params *GetV1NameIdParams, reqEditors ...RequestEditorFn) (*GetV1NameIdResponse, error) {
+	rsp, err := c.GetV1NameId(ctx, id, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -452,10 +490,10 @@ func ParseGetV1NameIdResponse(rsp *http.Response) (*GetV1NameIdResponse, error) 
 type ServerInterface interface {
 
 	// (GET /v1/name)
-	GetV1Name(ctx echo.Context) error
+	GetV1Name(ctx echo.Context, params GetV1NameParams) error
 
 	// (GET /v1/name/{id})
-	GetV1NameId(ctx echo.Context, id int64) error
+	GetV1NameId(ctx echo.Context, id int64, params GetV1NameIdParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -467,8 +505,31 @@ type ServerInterfaceWrapper struct {
 func (w *ServerInterfaceWrapper) GetV1Name(ctx echo.Context) error {
 	var err error
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetV1NameParams
+	// ------------- Optional query parameter "year" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "year", ctx.QueryParams(), &params.Year)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter year: %s", err))
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", ctx.QueryParams(), &params.Page)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter page: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetV1Name(ctx)
+	err = w.Handler.GetV1Name(ctx, params)
 	return err
 }
 
@@ -483,8 +544,17 @@ func (w *ServerInterfaceWrapper) GetV1NameId(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetV1NameIdParams
+	// ------------- Optional query parameter "year" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "year", ctx.QueryParams(), &params.Year)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter year: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetV1NameId(ctx, id)
+	err = w.Handler.GetV1NameId(ctx, id, params)
 	return err
 }
 
@@ -522,7 +592,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 }
 
 type GetV1NameRequestObject struct {
-	Body *GetV1NameJSONRequestBody
+	Params GetV1NameParams
 }
 
 type GetV1NameResponseObject interface {
@@ -551,7 +621,8 @@ func (response GetV1NamedefaultJSONResponse) VisitGetV1NameResponse(w http.Respo
 }
 
 type GetV1NameIdRequestObject struct {
-	Id int64 `json:"id"`
+	Id     int64 `json:"id"`
+	Params GetV1NameIdParams
 }
 
 type GetV1NameIdResponseObject interface {
@@ -603,14 +674,10 @@ type strictHandler struct {
 }
 
 // GetV1Name operation middleware
-func (sh *strictHandler) GetV1Name(ctx echo.Context) error {
+func (sh *strictHandler) GetV1Name(ctx echo.Context, params GetV1NameParams) error {
 	var request GetV1NameRequestObject
 
-	var body GetV1NameJSONRequestBody
-	if err := ctx.Bind(&body); err != nil {
-		return err
-	}
-	request.Body = &body
+	request.Params = params
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetV1Name(ctx.Request().Context(), request.(GetV1NameRequestObject))
@@ -632,10 +699,11 @@ func (sh *strictHandler) GetV1Name(ctx echo.Context) error {
 }
 
 // GetV1NameId operation middleware
-func (sh *strictHandler) GetV1NameId(ctx echo.Context, id int64) error {
+func (sh *strictHandler) GetV1NameId(ctx echo.Context, id int64, params GetV1NameIdParams) error {
 	var request GetV1NameIdRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetV1NameId(ctx.Request().Context(), request.(GetV1NameIdRequestObject))
@@ -659,17 +727,17 @@ func (sh *strictHandler) GetV1NameId(ctx echo.Context, id int64) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8RVXW/bOgz9KwLvfTRqp/diwPw4tBiCAd2wh700eVBtJtFgSypFBw0C//eBkp2m+Vgz",
-	"oNteAsFkziEPD6UtVK71zqLlAOUWQrXCVsfjLZEjOXhyHokNxs8thqCXKMcaQ0XGs3EWypSvxnAGvPEI",
-	"JQQmY5fQ9xkQPnaGsIbyfgcz7zO40y3eWqbNMZvV7QkqXqGKkWOWAS580Uv8io8dBj5GbUxr+Axs1z4g",
-	"KbdQhrENyiMpnxpaOGo1QwnG8rv/n7mNZVwiQZ+BP6mM4EpkAL8MaoOaTkNJRArcU+FVvANdgnc24B8U",
-	"RuoM5wcZIIMIKyn/Ei6ghH/yZ2vmgy/zZ6v0OxpNpDdvrD471s1prBg6lOOtZ3oR4MFKjf+LLIMa2TDS",
-	"saN5dIKxC3dch2hLav9bBmy4wTEGGayRQsouroqriTTlPFrtDZTwX/wkzLyKk8zXk3zc4CWeMNZH5NSu",
-	"WpBrlVZLs0arhg7EmVoyp3XK/Ta5S36ntNkfXB3vjMpZRhvxtfeNqeK/8u9BSLaAT7r1TfJfIT9r3XTS",
-	"1XYWxZpBeV1M3mezqNkMykk2S7rJueij0smBl/jzxd3T92lMaeNiCddFcUHRv8w37HTke6myKKxolyDh",
-	"he4afrMq0lNxgrmz+OSxYqwVjjl9tvNFvjV1/1Nz6GgP9bBR05vzjpjW0XWkW2SkAOX9Idb0RrZreHQU",
-	"O0XIHYnDz5pjAmlVoIyGhmx4jMDUsL94TB3u2+P1tZ3/ZkMMF+TxOD5/+vvTl1VCWo9j6qiBElbMvszz",
-	"7coFFpX7XG6UDNaajH4YpjMGk1OGHqBxlW4kJOjz/kcAAAD//0TbKoHRCAAA",
+	"H4sIAAAAAAAC/9RVwW7bMAz9FYHbUaiTbhgwn1sMwYBu2GGXIgfVYRINtqRSdNAg8L8PlOWkbeI2wwZs",
+	"uwSOSfM9Pj5KO6h8E7xDxxHKHcRqjY1Jj9dEnuQhkA9IbDG9bjBGs0J5XGCsyAa23kHZ56shrIG3AaGE",
+	"yGTdCrpOA+F9awkXUN7uy8w7DTemwWvHtD1Gc6Y5AcVrVClyjJLLxa9mhd8wBu8iHpetbWN5pG7b3CEp",
+	"v1SWsYkqIKnQd7T01BiGEqzjD+8P4NYxrpCg04lvHCccQUMqKylvCZdQwpviMIIi618cJOn2MIbIpP/h",
+	"pP6CIZHcwXl82bOpT9dKoedynFd1i4ZOF5WIFHssyKsFn1ln+C6hZDV0HunQ0Tw5wbqlP+Yh2pJ6/E4D",
+	"W65xiIGGDVLssycXk4upNOUDOhMslPAuvRJkXqdJFptpMTh1hSeM9Qm5b1ctyTfKqJXdoFO5A3GmkczZ",
+	"os/9Pr3p3R0MmQYZKUJ5e46eoAEfTBPq3oUT+dmYupXeLifTj9DLAiXct0hb0HnDBjF7/8lXZ0zldQeO",
+	"cpmOEsnj/G0iL+zxOKvJKK3BXr/Cay6+7Y+ghHU5SWiVd4wuucSEUNsqzb74EYX77hHCawfE00MuOf6p",
+	"DsJd0T5BwkvT1vzHWPR3xAnk1uFDwIpxoXDI6fR+UYqdXXQvbotJdlZ3WzW7Gl+R2eK/W5LZlVDJ159i",
+	"rwi5JXfmssiRc+Bjpf3D0cjU4r/l0HyFHfvjy+e/b8dOQ0TaDL5pqYYS1syhLIrd2kcWlbtCznwNG0PW",
+	"3OXpDMHeurkHqH1laglJ9Xn3MwAA///2wzQKWwkAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

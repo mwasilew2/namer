@@ -10,3 +10,7 @@ gen-oapi:
 .PHONY gen-ui:
 gen-ui:
 	cd ui/vue-app; yarn run build
+
+.PHONY dev-run: gen-grpc gen-oapi gen-ui
+dev-run:
+	go run cmd/app/*.go --log-level 0 server --http-debug

@@ -41,42 +41,85 @@ type serverCmd struct {
 	server_grpc.UnimplementedAppServerServer
 }
 
+func parseYear(year *int64) (int64, error) {
+	var result int64
+	if year != nil {
+		if *year < 0 {
+			return 0, fmt.Errorf("incorrect request parameters, year must be >= 0")
+		}
+		if *year != 0 {
+			result = *year
+		}
+	}
+	if result == 0 {
+		result = int64(time.Now().Year())
+	}
+	return result, nil
+
+}
+
+func parseLimit(limit *int64) (int64, error) {
+	var result int64
+	if limit != nil {
+		if *limit < 0 {
+			return 0, fmt.Errorf("incorrect request parameters, limit must be >= 0")
+		}
+		if *limit != 0 {
+			result = *limit
+		}
+	}
+	if result == 0 {
+		result = 10
+	}
+	return result, nil
+}
+
+func parsePage(page *int64) (int64, error) {
+	var result int64
+	if page != nil {
+		if *page < 0 {
+			return 0, fmt.Errorf("incorrect request parameters, page must be >= 0")
+		}
+		if *page != 0 {
+			result = *page
+		}
+	}
+	return result, nil
+}
+
 func (c *serverCmd) GetV1Name(ctx context.Context, request server_oapi.GetV1NameRequestObject) (server_oapi.GetV1NameResponseObject, error) {
-	// sanitize input
-	var page int64
-	if request.Body.Page != nil {
-		if *request.Body.Page < 0 {
-			return nil, fmt.Errorf("page must be >= 0")
-		}
-		if *request.Body.Page != 0 {
-			page = *request.Body.Page
-		}
+	c.logger.Debug("request", "request", request)
+
+	// year
+	year, err := parseYear(request.Params.Year)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse year: %w", err)
+	}
+	years, err := c.namesService.GetYearsAvailable(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get years available: %w", err)
+	}
+	if _, ok := years[year]; !ok {
+		return nil, fmt.Errorf("year %d not available", year)
 	}
 
-	var limit int64
-	if request.Body.Limit != nil {
-		if *request.Body.Limit < 0 {
-			return nil, fmt.Errorf("limit must be >= 0")
-		}
-		if *request.Body.Limit != 0 {
-			limit = *request.Body.Limit
-		}
-	}
-	if limit == 0 {
-		limit = 10
+	// limit
+	limit, err := parseLimit(request.Params.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse limit: %w", err)
 	}
 
-	var year int64
-	if request.Body.Year != nil {
-		if *request.Body.Year < 0 {
-			return nil, fmt.Errorf("year must be >= 0")
-		}
-		if *request.Body.Year != 0 {
-			year = *request.Body.Year
-		}
+	// page
+	page, err := parsePage(request.Params.Page)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse page: %w", err)
 	}
-	if year == 0 {
-		year = 2023
+	count, err := c.namesService.GetNoOfEntries(ctx, year)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get no of entries: %w", err)
+	}
+	if page*limit > count {
+		return nil, fmt.Errorf("incorrect request parameters, page*limit must be <= count")
 	}
 
 	// get data from DB
@@ -106,7 +149,11 @@ func (c *serverCmd) GetV1Name(ctx context.Context, request server_oapi.GetV1Name
 }
 
 func (c *serverCmd) GetV1NameId(ctx context.Context, request server_oapi.GetV1NameIdRequestObject) (server_oapi.GetV1NameIdResponseObject, error) {
-	nameEntry, err := c.namesService.GetName(ctx, request.Id)
+	year, err := parseYear(request.Params.Year)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse year: %w", err)
+	}
+	nameEntry, err := c.namesService.GetName(ctx, year, request.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get name: %w", err)
 	}

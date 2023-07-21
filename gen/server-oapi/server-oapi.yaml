@@ -12,14 +12,37 @@ paths:
   /v1/name:
     get:
       description: Get names from a given year
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/NamesPageRequest"
-            examples:
-              '0':
-                value: '{"year":2019,"page":1,"limit":10}'
+      parameters:
+        - name: year
+          in: query
+          description: the year of the name
+          required: false
+          schema:
+            type: integer
+            format: int64
+          examples:
+            '0':
+              value: '2019'
+        - name: page
+          in: query
+          description: the page number
+          required: false
+          schema:
+            type: integer
+            format: int64
+          examples:
+            '0':
+              value: '1'
+        - name: limit
+          in: query
+          description: the number of items per page
+          required: false
+          schema:
+            type: integer
+            format: int64
+          examples:
+            '0':
+              value: '10'
       responses:
         '200':
           description: name response
@@ -37,6 +60,16 @@ paths:
     get:
       description: Get a name by ID
       parameters:
+        - name: year
+          in: query
+          description: the year of the name
+          required: false
+          schema:
+            type: integer
+            format: int64
+          examples:
+            '0':
+              value: '2019'
         - name: id
           in: path
           description: ID of message to return
@@ -62,20 +95,6 @@ paths:
                 $ref: '#/components/schemas/Error'
 components:
   schemas:
-    NamesPageRequest:
-      properties:
-        year:
-          type: integer
-          format: int64
-          description: the year of the name
-        page:
-          type: integer
-          format: int64
-          description: the page number
-        limit:
-          type: integer
-          format: int64
-          description: the number of items per page
     NamesPageResponse:
       required:
         - names

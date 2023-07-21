@@ -14,6 +14,7 @@ type transformCmd struct {
 	// cli options
 	InputFilepath  string `help:"path to the file to transform" type:"existingfile" default:"./internal/adapters/namesdb/names.csv"`
 	OutputFilepath string `help:"path to the file to write the transformed data to" type:"string" default:"./internal/adapters/namesdb/names_transformed.csv"`
+	Year           string `help:"year of the data to transform" required:"" type:"string"`
 	// Dependencies
 	logger *slog.Logger
 }
@@ -56,7 +57,7 @@ FILE_READING_LOOP:
 		c.logger.Debug("read a record", "record", record)
 		name := record[0]
 		// write the transformed data to the destination file
-		_, err = bofd.WriteString(fmt.Sprintf("%d,%s\n", lastId, name))
+		_, err = bofd.WriteString(fmt.Sprintf("%s,%d,%s\n", c.Year, lastId, name))
 		if err != nil {
 			return fmt.Errorf("failed to write to destination file %s: %w", c.OutputFilepath, err)
 		}
