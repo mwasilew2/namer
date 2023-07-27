@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -27,6 +28,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+var ErrIncorrectYearParameter = errors.New("invalid year parameter")
+
 type serverCmd struct {
 	// cli options
 	HttpAddr  string `help:"address which the http server should listen on" default:":8080" env:"HTTP_ADDR"`
@@ -41,20 +44,23 @@ type serverCmd struct {
 	server_grpc.UnimplementedAppServerServer
 }
 
-func parseYear(year *int64) (int64, error) {
-	var result int64
+func (c *serverCmd) parseYear(year *int64) (int64, error) {
+	var parsedYear int64
 	if year != nil {
 		if *year < 0 {
-			return 0, fmt.Errorf("incorrect request parameters, year must be >= 0")
+			return 0, ErrIncorrectYearParameter
 		}
-		if *year != 0 {
-			result = *year
+		if *year > 0 {
+			parsedYear = *year
 		}
+	} else {
+		parsedYear = int64(time.Now().Year())
 	}
-	if result == 0 {
-		result = int64(time.Now().Year())
+	_, err := c.namesService.GetName(context.Background(), parsedYear, 0)
+	if err != nil {
+		return 0, err
 	}
-	return result, nil
+	return parsedYear, nil
 
 }
 
@@ -91,9 +97,28 @@ func (c *serverCmd) GetV1Name(ctx context.Context, request server_oapi.GetV1Name
 	c.logger.Debug("request", "request", request)
 
 	// year
-	year, err := parseYear(request.Params.Year)
+	year, err := c.parseYear(request.Params.Year)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse year: %w", err)
+		switch {
+		case errors.Is(err, namesdb.ErrYearNotFound):
+			return server_oapi.GetV1NamedefaultJSONResponse{
+				Body: server_oapi.Error{
+					Code:    http.StatusBadRequest,
+					Message: "year not available",
+				},
+				StatusCode: http.StatusBadRequest,
+			}, nil
+		case errors.Is(err, ErrIncorrectYearParameter):
+			return server_oapi.GetV1NamedefaultJSONResponse{
+				Body: server_oapi.Error{
+					Code:    http.StatusBadRequest,
+					Message: "invalid year parameter",
+				},
+				StatusCode: http.StatusBadRequest,
+			}, nil
+		default:
+			return nil, fmt.Errorf("failed to parse year: %w", err)
+		}
 	}
 	years, err := c.namesService.GetYearsAvailable(ctx)
 	if err != nil {
@@ -149,10 +174,32 @@ func (c *serverCmd) GetV1Name(ctx context.Context, request server_oapi.GetV1Name
 }
 
 func (c *serverCmd) GetV1NameId(ctx context.Context, request server_oapi.GetV1NameIdRequestObject) (server_oapi.GetV1NameIdResponseObject, error) {
-	year, err := parseYear(request.Params.Year)
+	// year
+	year, err := c.parseYear(request.Params.Year)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse year: %w", err)
+		switch {
+		case errors.Is(err, namesdb.ErrYearNotFound):
+			return server_oapi.GetV1NameIddefaultJSONResponse{
+				Body: server_oapi.Error{
+					Code:    http.StatusBadRequest,
+					Message: "year not available",
+				},
+				StatusCode: http.StatusBadRequest,
+			}, nil
+		case errors.Is(err, ErrIncorrectYearParameter):
+			return server_oapi.GetV1NameIddefaultJSONResponse{
+				Body: server_oapi.Error{
+					Code:    http.StatusBadRequest,
+					Message: "invalid year parameter",
+				},
+				StatusCode: http.StatusBadRequest,
+			}, nil
+		default:
+			return nil, fmt.Errorf("failed to parse year: %w", err)
+		}
 	}
+
+	// get name
 	nameEntry, err := c.namesService.GetName(ctx, year, request.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get name: %w", err)
@@ -180,7 +227,12 @@ func (c *serverCmd) Run(cmdCtx *cmdContext) error {
 	e.Debug = c.HttpDebug
 	e.HideBanner = true
 	e.HidePort = true
-	e.Use(slogecho.New(c.logger.With("subcomponent", "echo")))
+	slogEchoMiddleware := slogecho.NewWithConfig(c.logger.With("subcomponent", "echo"), slogecho.Config{
+		DefaultLevel:     programLevel.Level(),
+		ClientErrorLevel: programLevel.Level(),
+		ServerErrorLevel: programLevel.Level(),
+	})
+	e.Use(slogEchoMiddleware)
 	e.Use(echoprometheus.NewMiddleware("echo"))
 	e.Use(middleware.Recover())
 

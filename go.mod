@@ -2,6 +2,10 @@ module github.com/mwasilew2/go-service-template
 
 go 1.20
 
+replace (
+	github.com/samber/slog-echo v0.3.0 => /home/michal/go/src/github.com/mwasilew2/slog-echo // https://github.com/samber/slog-echo/issues/1
+)
+
 require (
 	github.com/alecthomas/kong v0.8.0
 	github.com/carlmjohnson/versioninfo v0.22.4
