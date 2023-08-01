@@ -11,7 +11,7 @@ require (
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/muesli/cancelreader v0.2.2
 	github.com/prometheus/common v0.40.0
-	github.com/samber/slog-echo v0.3.0
+	github.com/samber/slog-echo v0.4.0
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
 	google.golang.org/grpc v1.56.2
 )
