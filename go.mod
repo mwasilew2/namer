@@ -11,7 +11,7 @@ require (
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/muesli/cancelreader v0.2.2
 	github.com/prometheus/common v0.44.0
-	github.com/samber/slog-echo v0.4.0
+	github.com/samber/slog-echo v1.2.1
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
 	google.golang.org/grpc v1.57.0
 )
@@ -65,6 +65,7 @@ require (
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/samber/lo v1.38.1 // indirect
 	github.com/schollz/closestmatch v2.1.0+incompatible // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/tdewolff/minify/v2 v2.12.8 // indirect
