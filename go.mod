@@ -3,7 +3,7 @@ module github.com/mwasilew2/go-service-template
 go 1.20
 
 require (
-	github.com/alecthomas/kong v0.8.0
+	github.com/alecthomas/kong v0.8.1
 	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/deepmap/oapi-codegen v1.14.0
 	github.com/getkin/kin-openapi v0.119.0
