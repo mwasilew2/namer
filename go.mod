@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/kong v0.8.0
 	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/deepmap/oapi-codegen v1.14.0
-	github.com/getkin/kin-openapi v0.119.0
+	github.com/getkin/kin-openapi v0.122.0
 	github.com/labstack/echo-contrib v0.15.0
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/muesli/cancelreader v0.2.2
@@ -91,7 +91,7 @@ require (
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/oklog/run v1.1.0
-	github.com/perimeterx/marshmallow v1.1.4 // indirect
+	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
